@@ -238,10 +238,124 @@
   }
   @media print {
     header.app-header, .floating-actions, .toolbar, .btn,
-    .photo-buttons, .photo-thumb .x, .submit-section-btn { display: none !important; }
+    .photo-buttons, .photo-thumb .x, .submit-section-btn,
+    .criteria-panel, .criteria-overlay { display: none !important; }
     .section-content.collapsed { display: block !important; }
     body { background: white; }
   }
+
+  /* Scoring criteria panel */
+  .criteria-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 300;
+    backdrop-filter: blur(2px);
+  }
+  .criteria-overlay.open { display: block; }
+
+  .criteria-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(480px, 100vw);
+    background: white;
+    z-index: 301;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0,0,0,.2);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+  }
+  .criteria-panel.open { transform: translateX(0); }
+
+  .criteria-panel-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .criteria-panel-header h2 { margin: 0; font-size: 15px; line-height: 1.35; }
+  .criteria-panel-header .sub { font-size: 11px; opacity: .85; margin-top: 2px; }
+  .criteria-close-btn {
+    background: rgba(255,255,255,.2);
+    border: none;
+    color: white;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .criteria-close-btn:hover { background: rgba(255,255,255,.35); }
+
+  .criteria-panel-body {
+    overflow-y: auto;
+    padding: 18px;
+    flex: 1;
+  }
+
+  .criteria-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  .criteria-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .criteria-table th {
+    background: var(--primary);
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 700;
+  }
+  .criteria-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e5eaf0;
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  .criteria-table tr:nth-child(even) td { background: #f7fafd; }
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .score-badge.s0 { background: #c2410c; }
+  .score-badge.s1 { background: #d97706; }
+  .score-badge.s2 { background: #ca8a04; }
+  .score-badge.s3 { background: #65a30d; }
+  .score-badge.s4 { background: #1f9d55; }
+
+  .criteria-notes {
+    background: #f8fafc;
+    border: 1px solid #d6dee8;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .criteria-notes strong { color: var(--primary-dark); }
 </style>
 </head>
 <body>
@@ -288,6 +402,7 @@
   <div class="subtitle">Hyperbaric Oxygen Therapy Clinical Unit Standards Assessment Form (v2.2)</div>
   <div class="who-badge" id="who-badge"></div>
   <div class="toolbar">
+    <button class="btn btn-secondary" id="btn-criteria" onclick="openCriteriaPanel()">📋 เกณฑ์การให้คะแนน</button>
     <button class="btn btn-save" id="btn-save">💾 บันทึก (Save)</button>
     <button class="btn btn-continue" id="btn-continue">▶️ ดำเนินการต่อจากข้อล่าสุด</button>
     <button class="btn btn-secondary" id="btn-export-xlsx">⤓ Export Excel</button>
@@ -1015,6 +1130,75 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPreStart();
   setSyncStatus(API_URL ? 'online' : 'offline');
 });
+</script>
+
+<!-- Scoring Criteria Panel -->
+<div class="criteria-overlay" id="criteria-overlay" onclick="closeCriteriaPanel()"></div>
+<div class="criteria-panel" id="criteria-panel">
+  <div class="criteria-panel-header">
+    <div>
+      <h2>เกณฑ์การให้คะแนน</h2>
+      <div class="sub">มาตรฐานหน่วยงานด้านเวชศาสตร์ความดันบรรยากาศสูงทางคลินิก</div>
+    </div>
+    <button class="criteria-close-btn" onclick="closeCriteriaPanel()" title="ปิด">✕</button>
+  </div>
+  <div class="criteria-panel-body">
+
+    <div class="criteria-section-title">ระดับคะแนนและความหมาย</div>
+    <table class="criteria-table">
+      <thead>
+        <tr><th style="width:60px">คะแนน</th><th>รายละเอียด</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:center"><span class="score-badge s0">0</span></td>
+          <td>ไม่รับทราบข้อมูล ไม่มีการปฏิบัติ</td>
+        </tr>
+        <tr>
+          <td style="text-align:center"><span class="score-badge s1">1</span></td>
+          <td>รับรู้ถึงข้อกำหนด สามารถให้รายละเอียดการปฏิบัติได้ ให้ข้อมูลว่าเคยปฏิบัติแต่ขาดเอกสารยืนยัน หรือเพื่อตรวจสอบย้อนหลัง</td>
+        </tr>
+        <tr>
+          <td style="text-align:center"><span class="score-badge s2">2</span></td>
+          <td>มีการปฏิบัติที่เห็นได้ชัดเจน มีรูปแบบชัดเจน แต่ขาดเอกสารเพื่อยืนยัน หรือเพื่อตรวจสอบย้อนหลัง</td>
+        </tr>
+        <tr>
+          <td style="text-align:center"><span class="score-badge s3">3</span></td>
+          <td>มีการปฏิบัติที่เห็นได้ชัดเจน มีรูปแบบชัดเจน มีเอกสารเพื่อยืนยัน และตรวจสอบย้อนหลังได้</td>
+        </tr>
+        <tr>
+          <td style="text-align:center"><span class="score-badge s4">4</span></td>
+          <td>มีการปฏิบัติที่เห็นได้ชัดเจน มีรูปแบบชัดเจน มีเอกสารเพื่อยืนยัน และตรวจสอบย้อนหลังได้ และมีแผนหรือแนวทางในการพัฒนา</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="criteria-section-title">หมายเหตุ</div>
+    <div class="criteria-notes">
+      <strong>1.</strong> Class A หมายถึง Multiplace HBC<br>
+      <strong>2.</strong> Class B หมายถึง Monoplace HBC<br>
+      <strong>3.</strong> หัวข้อที่มีเครื่องหมาย <strong>*</strong> (เช่น HBOPC 1.2.3*) หมายถึง <strong>MUST (ข้อบังคับ)</strong><br>
+      <strong>4.</strong> หัวข้อที่มีแถบสีเข้มทั้งแถว หมายถึง <strong>SHOULD</strong><br>
+      <strong>5.</strong> หมายเลขของหัวข้อจะไม่เรียงลำดับ บางหัวข้อจะข้ามไปเนื่องจากยกเลิก<br>
+      <strong>6.</strong> ลงคะแนนให้ครบทุกหัวข้อ<br>
+      <strong>7.</strong> ข้อใดไม่ต้องการตรวจ ให้ขีดฆ่าและระบุชัดเจนว่า <strong>"ไม่ตรวจ"</strong>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function openCriteriaPanel() {
+    document.getElementById('criteria-panel').classList.add('open');
+    document.getElementById('criteria-overlay').classList.add('open');
+  }
+  function closeCriteriaPanel() {
+    document.getElementById('criteria-panel').classList.remove('open');
+    document.getElementById('criteria-overlay').classList.remove('open');
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCriteriaPanel();
+  });
 </script>
 </body>
 </html>
