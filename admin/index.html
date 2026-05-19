@@ -260,7 +260,7 @@ function render() {
       <div class="stat"><b>${totalMax}</b><small>คะแนนเต็ม</small></div>
       <div class="stat"><b>${totalMax ? (totalSum/totalMax*100).toFixed(2) : '0.00'}%</b><small>เปอร์เซ็นต์</small></div>
       <div class="stat"><b>${totalScored}</b><small>ข้อที่ตรวจแล้ว</small></div>
-      <div class="stat"><b style="color:#ffd166">${totalCritFail}</b><small>ข้อที่ต้องผ่าน (*) ที่ยังไม่ผ่าน</small></div>
+      <div class="stat"><b style="color:#ffd166">${totalCritFail}</b><small>ข้อบังคับ (*) ที่ยังไม่ผ่าน</small></div>
       <div class="stat"><b>${allInspectors.size}</b><small>ผู้ตรวจทั้งหมด</small></div>
     </div>
   </div>
@@ -285,7 +285,7 @@ function render() {
     html += `<div class="card cat-card cat-${idx}">
       <h3>${catName}</h3>
       <div class="big">${c.sumAvg.toFixed(2)} / ${c.maxScore}</div>
-      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อที่ต้องผ่าน ${c.criticalFail}</div>
+      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อบังคับ ${c.criticalFail}</div>
       <div class="inspectors">ผู้ตรวจ (${insp.length}): ${escapeHtml(insp.join(', ')) || '-'}</div>
       ${notPassedHtml}
     </div>`;
@@ -417,7 +417,7 @@ function exportXLSX() {
     ['วันที่', $('f-date').value || 'ทั้งหมด'],
     ['สร้างเมื่อ', new Date().toLocaleString('th-TH')],
     [],
-    ['กลุ่ม','คะแนนรวม(จากค่าเฉลี่ย)','คะแนนเต็ม','เปอร์เซ็นต์','จำนวนข้อตรวจแล้ว','จำนวนข้อทั้งหมด','ข้อที่ต้องผ่านไม่ผ่าน']
+    ['กลุ่ม','คะแนนรวม(จากค่าเฉลี่ย)','คะแนนเต็ม','เปอร์เซ็นต์','จำนวนข้อตรวจแล้ว','จำนวนข้อทั้งหมด','ข้อบังคับไม่ผ่าน']
   ];
   ['อำนวยการ','ความปลอดภัย','การพยาบาล'].forEach(k => {
     const c = cats[k];

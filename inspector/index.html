@@ -307,7 +307,7 @@
     <div class="summary-item">คะแนนรวม <b id="total-score">0</b></div>
     <div class="summary-item">เต็ม <b id="max-score">0</b></div>
     <div class="summary-item">เปอร์เซ็นต์ <b id="percent">0%</b></div>
-    <div class="summary-item">ข้อวิกฤต (*) ที่ยังไม่ผ่าน <b id="critical-fail">0</b></div>
+    <div class="summary-item">ข้อบังคับ (*) ที่ยังไม่ผ่าน <b id="critical-fail">0</b></div>
     <div style="flex-basis:100%;">
       <div class="progress-wrapper"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
     </div>
@@ -404,7 +404,7 @@ function buildForm() {
       itemEl.dataset.section = sec.code_prefix;
       itemEl.dataset.critical = item.critical ? '1' : '0';
       itemEl.innerHTML = `
-        <div class="item-code">${escapeHtml(item.code)}${item.critical ? '<span class="critical-mark" title="ข้อวิกฤต Must">*</span>' : ''}</div>
+        <div class="item-code">${escapeHtml(item.code)}${item.critical ? '<span class="critical-mark" title="ข้อบังคับ Must">*</span>' : ''}</div>
         <div>
           <div class="item-detail">${escapeHtml(item.detail)}</div>
           ${item.inspection ? `<div class="item-inspection"><span class="item-inspection-title">เกณฑ์การตรวจสอบ</span>${escapeHtml(item.inspection)}</div>` : ''}
