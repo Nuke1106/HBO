@@ -571,9 +571,20 @@ async function uploadPhotoToServer(itemEl, photoObj) {
       const idx = photos.findIndex(p => p.localId === photoObj.localId);
       if (idx >= 0) { photos[idx] = photoObj; itemEl.dataset.photos = JSON.stringify(photos); }
       renderThumbs(itemEl);
-      autoSave();
+      // สำคัญ: หลังอัปโหลดรูปเสร็จ ต้อง mark ข้อนี้เป็น pending sync ใหม่
+      // เพื่อให้ URL ของรูปถูกส่งไป Google Sheet
+      pendingSyncItems.add(itemEl.id);
+      saveToStorage(false);
+      // Trigger sync ทันที (ไม่รอ autoSave debounce)
+      setTimeout(() => syncToServer(false), 500);
+      showToast('อัปโหลดรูปสำเร็จ ✓', 'success', 1500);
+    } else {
+      showToast('อัปโหลดรูปไม่สำเร็จ: ' + (j.error || 'unknown'), 'error', 3000);
     }
-  } catch (e) { console.warn('Upload photo failed', e); }
+  } catch (e) {
+    console.warn('Upload photo failed', e);
+    showToast('อัปโหลดรูปไม่สำเร็จ: ' + e.message, 'error', 3000);
+  }
 }
 
 // =================== STATE ===================
@@ -864,7 +875,17 @@ function setupHandlers() {
   $('btn-continue').addEventListener('click', jumpToLast);
   $('btn-export-xlsx').addEventListener('click', exportXLSX);
   $('btn-print').addEventListener('click', () => window.print());
-  $('btn-sync').addEventListener('click', () => syncToServer(true));
+  $('btn-sync').addEventListener('click', () => {
+    // กดปุ่ม Sync = ส่งข้อมูลทุกข้อขึ้นใหม่ทั้งหมด (full resync) เพื่อให้ครอบคลุมรูปที่อัปโหลดไปแล้วแต่ URL ยังไม่ขึ้น Sheet
+    document.querySelectorAll('.item').forEach(it => {
+      const hasData = (it.dataset.score !== undefined && it.dataset.score !== '') ||
+                      it.dataset.skipped === '1' ||
+                      (it.dataset.note && it.dataset.note.length > 0) ||
+                      (it.dataset.photos && it.dataset.photos.length > 2);
+      if (hasData) pendingSyncItems.add(it.id);
+    });
+    syncToServer(true);
+  });
   $('btn-edit-info').addEventListener('click', () => $('preStartOverlay').classList.remove('hidden'));
   $('btn-reset').addEventListener('click', () => {
     if (confirm('ต้องการล้างข้อมูลในเครื่องทั้งหมดใช่หรือไม่? (ข้อมูลที่ sync ขึ้น Google Sheet จะยังอยู่)')) {
