@@ -43,6 +43,15 @@
   .cat-card .big { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
   .cat-card .mini { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .cat-card .inspectors { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .not-passed-list { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .not-passed-title { font-size: 12px; font-weight: 700; color: var(--warn); margin-bottom: 6px; }
+  .not-passed-item { display: flex; align-items: baseline; gap: 6px; padding: 3px 0;
+    border-bottom: 1px dashed #f0e6d3; font-size: 12px; }
+  .not-passed-item:last-child { border-bottom: none; }
+  .not-passed-code { background: #fff3cd; color: #7c4a00; border: 1px solid #fcd96a;
+    padding: 1px 7px; border-radius: 4px; font-family: "Consolas",monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .not-passed-detail { color: var(--text); flex: 1; line-height: 1.4; }
+  .not-passed-score { color: var(--warn); font-weight: 700; white-space: nowrap; font-size: 11px; }
 
   .overall-card { background: linear-gradient(135deg, #0a6cb1, #084d80); color: white; padding: 22px; border-radius: 10px; }
   .overall-card h2 { margin: 0 0 8px; font-size: 18px; }
@@ -184,6 +193,7 @@ function aggregateByItem() {
     const sum = scored.reduce((s, r) => s + r.score, 0);
     m[code].avg = scored.length ? sum / scored.length : null;
     m[code].count = scored.length;
+    m[code].code = code;
     Object.assign(m[code], itemMeta[code] || {});
   });
   return m;
@@ -204,6 +214,7 @@ function categoryStats(aggregated) {
     c.maxScore = items.length * 4;
     c.percent = c.maxScore ? (c.sumAvg / c.maxScore * 100) : 0;
     c.criticalFail = items.filter(i => i.critical && i.avg < 3).length;
+    c.notPassedItems = items.filter(i => i.avg !== null && i.avg >= 2 && i.avg < 3);
   });
   return cats;
 }
@@ -249,7 +260,7 @@ function render() {
       <div class="stat"><b>${totalMax}</b><small>คะแนนเต็ม</small></div>
       <div class="stat"><b>${totalMax ? (totalSum/totalMax*100).toFixed(2) : '0.00'}%</b><small>เปอร์เซ็นต์</small></div>
       <div class="stat"><b>${totalScored}</b><small>ข้อที่ตรวจแล้ว</small></div>
-      <div class="stat"><b style="color:#ffd166">${totalCritFail}</b><small>ข้อวิกฤต (*) ที่ยังไม่ผ่าน</small></div>
+      <div class="stat"><b style="color:#ffd166">${totalCritFail}</b><small>ข้อที่ต้องผ่าน (*) ที่ยังไม่ผ่าน</small></div>
       <div class="stat"><b>${allInspectors.size}</b><small>ผู้ตรวจทั้งหมด</small></div>
     </div>
   </div>
@@ -259,11 +270,24 @@ function render() {
     idx++;
     const c = cats[catName];
     const insp = Array.from(c.inspectors);
+    const notPassedHtml = c.notPassedItems.length > 0
+      ? `<div class="not-passed-list">
+          <div class="not-passed-title">⚠ ข้อที่ไม่ผ่าน (คะแนน 2–2.99) — ${c.notPassedItems.length} ข้อ</div>
+          ${c.notPassedItems.map(i =>
+            `<div class="not-passed-item">
+              <span class="not-passed-code">${escapeHtml(i.code)}</span>
+              <span class="not-passed-detail">${escapeHtml(i.detail)}</span>
+              <span class="not-passed-score">${i.avg.toFixed(2)}</span>
+            </div>`
+          ).join('')}
+        </div>`
+      : '';
     html += `<div class="card cat-card cat-${idx}">
       <h3>${catName}</h3>
       <div class="big">${c.sumAvg.toFixed(2)} / ${c.maxScore}</div>
-      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อวิกฤต ${c.criticalFail}</div>
+      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อที่ต้องผ่าน ${c.criticalFail}</div>
       <div class="inspectors">ผู้ตรวจ (${insp.length}): ${escapeHtml(insp.join(', ')) || '-'}</div>
+      ${notPassedHtml}
     </div>`;
   });
   html += '</div>';
@@ -393,7 +417,7 @@ function exportXLSX() {
     ['วันที่', $('f-date').value || 'ทั้งหมด'],
     ['สร้างเมื่อ', new Date().toLocaleString('th-TH')],
     [],
-    ['กลุ่ม','คะแนนรวม(จากค่าเฉลี่ย)','คะแนนเต็ม','เปอร์เซ็นต์','จำนวนข้อตรวจแล้ว','จำนวนข้อทั้งหมด','ข้อวิกฤตไม่ผ่าน']
+    ['กลุ่ม','คะแนนรวม(จากค่าเฉลี่ย)','คะแนนเต็ม','เปอร์เซ็นต์','จำนวนข้อตรวจแล้ว','จำนวนข้อทั้งหมด','ข้อที่ต้องผ่านไม่ผ่าน']
   ];
   ['อำนวยการ','ความปลอดภัย','การพยาบาล'].forEach(k => {
     const c = cats[k];
