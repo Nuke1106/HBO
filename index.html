@@ -204,6 +204,106 @@
   @media (hover: none) and (pointer: coarse) {
     .option-card { min-height: 200px; }
   }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    width: 90%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    animation: popIn .2s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(.88); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  .modal-icon { font-size: 44px; margin-bottom: 12px; }
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0 0 6px;
+  }
+  .modal-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 22px;
+  }
+
+  .modal-input {
+    width: 100%;
+    padding: 11px 16px;
+    border: 2px solid #d0dae6;
+    border-radius: 12px;
+    font-size: 18px;
+    letter-spacing: 6px;
+    text-align: center;
+    outline: none;
+    transition: border-color .2s;
+    font-family: monospace;
+  }
+  .modal-input:focus { border-color: var(--primary); }
+  .modal-input.error { border-color: #e53e3e; animation: shake .3s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-6px); }
+    75%      { transform: translateX(6px); }
+  }
+
+  .modal-error {
+    color: #e53e3e;
+    font-size: 12px;
+    margin: 8px 0 0;
+    min-height: 18px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .btn-cancel {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #d0dae6;
+    border-radius: 10px;
+    background: white;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-cancel:hover { background: #f0f4f8; }
+  .btn-confirm {
+    flex: 2;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-confirm:hover { background: #e07800; }
 </style>
 </head>
 <body>
@@ -225,7 +325,7 @@
       <span class="option-cta">เริ่มตรวจ →</span>
     </a>
 
-    <a class="option-card admin" href="admin/" aria-label="เข้าใช้งานในฐานะผู้ดูแลระบบ">
+    <a class="option-card admin" href="#" onclick="openAdminModal(event)" aria-label="เข้าใช้งานในฐานะผู้ดูแลระบบ">
       <div class="option-icon" aria-hidden="true">📊</div>
       <h2 class="option-title">ผู้ดูแลระบบ</h2>
       <p class="option-description">
@@ -241,6 +341,71 @@
     <div class="version">v2.2</div>
   </footer>
 </div>
+
+<!-- Password Modal -->
+<div class="modal-overlay" id="adminModal" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-icon">🔐</div>
+    <h2 class="modal-title">ผู้ดูแลระบบ</h2>
+    <p class="modal-sub">กรุณากรอกรหัสผ่าน 4 ตัวอักษร</p>
+    <input
+      class="modal-input"
+      id="adminPass"
+      type="password"
+      maxlength="4"
+      placeholder="••••"
+      autocomplete="off"
+      onkeydown="handleKey(event)"
+      oninput="clearError()"
+    >
+    <div class="modal-error" id="passError"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAdminModal()">ยกเลิก</button>
+      <button class="btn-confirm" onclick="confirmPassword()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openAdminModal(e) {
+    e.preventDefault();
+    document.getElementById('adminModal').classList.add('active');
+    setTimeout(() => document.getElementById('adminPass').focus(), 100);
+  }
+
+  function closeAdminModal() {
+    document.getElementById('adminModal').classList.remove('active');
+    document.getElementById('adminPass').value = '';
+    document.getElementById('passError').textContent = '';
+    document.getElementById('adminPass').classList.remove('error');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('adminModal')) closeAdminModal();
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter') confirmPassword();
+    if (e.key === 'Escape') closeAdminModal();
+  }
+
+  function clearError() {
+    document.getElementById('passError').textContent = '';
+    document.getElementById('adminPass').classList.remove('error');
+  }
+
+  function confirmPassword() {
+    const input = document.getElementById('adminPass');
+    if (input.value === 'duam') {
+      window.location.href = 'admin/';
+    } else {
+      input.classList.add('error');
+      document.getElementById('passError').textContent = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
+      input.value = '';
+      setTimeout(() => input.classList.remove('error'), 400);
+    }
+  }
+</script>
 
 </body>
 </html>
