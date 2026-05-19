@@ -356,6 +356,207 @@
     color: var(--text);
   }
   .criteria-notes strong { color: var(--primary-dark); }
+
+  /* AI Chat Assistant */
+  .ai-fab {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(79,70,229,.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s;
+  }
+  .ai-fab:hover { transform: scale(1.08); }
+  .ai-fab:active { transform: scale(.95); }
+
+  .ai-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 300;
+    backdrop-filter: blur(2px);
+  }
+  .ai-overlay.open { display: block; }
+
+  .ai-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(520px, 100vw);
+    background: white;
+    z-index: 301;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0,0,0,.2);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+  }
+  .ai-panel.open { transform: translateX(0); }
+
+  .ai-header {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .ai-header h2 { margin: 0; font-size: 15px; line-height: 1.35; }
+  .ai-header .sub { font-size: 11px; opacity: .85; margin-top: 2px; }
+  .ai-close-btn {
+    background: rgba(255,255,255,.2);
+    border: none;
+    color: white;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .ai-close-btn:hover { background: rgba(255,255,255,.35); }
+
+  .ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ai-msg {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .ai-msg.user {
+    align-self: flex-end;
+    background: #4f46e5;
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .ai-msg.bot {
+    align-self: flex-start;
+    background: white;
+    color: var(--text);
+    border: 1px solid #e5eaf0;
+    border-bottom-left-radius: 4px;
+  }
+  .ai-msg.bot a { color: #4f46e5; text-decoration: underline; }
+  .ai-msg.error {
+    align-self: flex-start;
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    font-size: 12.5px;
+  }
+  .ai-msg.system {
+    align-self: center;
+    background: #eef2f6;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 14px;
+    max-width: 95%;
+  }
+  .ai-thinking {
+    align-self: flex-start;
+    background: white;
+    border: 1px solid #e5eaf0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-thinking .dots {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .ai-thinking .dots span {
+    width: 6px; height: 6px;
+    background: #4f46e5;
+    border-radius: 50%;
+    animation: aiBlink 1.2s infinite;
+  }
+  .ai-thinking .dots span:nth-child(2) { animation-delay: .2s; }
+  .ai-thinking .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes aiBlink {
+    0%,100% { opacity: .3; }
+    50% { opacity: 1; }
+  }
+
+  .ai-input-row {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    background: white;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .ai-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    max-height: 120px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .ai-input:focus { border-color: #4f46e5; }
+  .ai-send-btn {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border: none;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .2s;
+  }
+  .ai-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .ai-clear-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,.85);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+  .ai-clear-btn:hover { background: rgba(255,255,255,.15); }
+
+  @media (max-width: 640px) {
+    .ai-fab { width: 50px; height: 50px; font-size: 22px; left: 14px; bottom: 14px; }
+    .ai-panel { width: 100vw; }
+    .ai-msg { max-width: 92%; }
+  }
 </style>
 </head>
 <body>
@@ -1197,6 +1398,218 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeCriteriaPanel();
+  });
+</script>
+
+<!-- AI Chat Assistant -->
+<button class="ai-fab" id="ai-fab" onclick="openAiPanel()" title="ถาม AI">💬</button>
+<div class="ai-overlay" id="ai-overlay" onclick="closeAiPanel()"></div>
+<div class="ai-panel" id="ai-panel">
+  <div class="ai-header">
+    <div>
+      <h2>🔍 ผู้ช่วย AI (ค้นจากอินเทอร์เน็ต)</h2>
+      <div class="sub">ถามข้อมูลเกี่ยวกับเวชศาสตร์ความดันบรรยากาศสูง</div>
+    </div>
+    <div style="display:flex;align-items:center;">
+      <button class="ai-clear-btn" onclick="clearAiChat()" title="ล้างประวัติ">🗑 ล้าง</button>
+      <button class="ai-close-btn" onclick="closeAiPanel()" title="ปิด">✕</button>
+    </div>
+  </div>
+  <div class="ai-messages" id="ai-messages">
+    <div class="ai-msg system">สวัสดี! สอบถามข้อมูลเกี่ยวกับมาตรฐาน HBO, UHMS, ECHM, หรือเรื่องที่เกี่ยวข้องได้เลย — AI จะค้นหาจากอินเทอร์เน็ตให้</div>
+  </div>
+  <div class="ai-input-row">
+    <textarea class="ai-input" id="ai-input" rows="1" placeholder="พิมพ์คำถาม..." onkeydown="handleAiKey(event)"></textarea>
+    <button class="ai-send-btn" id="ai-send" onclick="sendAiMessage()" title="ส่ง">➤</button>
+  </div>
+</div>
+
+<script>
+  // ====================================================================
+  // ⚠️ ใส่ API key ของคุณตรงนี้ (เริ่มต้นด้วย sk-ant-api03-)
+  // ⚠️ คำเตือน: key จะมองเห็นได้ในเบราว์เซอร์ ใช้เฉพาะระบบภายในเครือข่ายปิด
+  // ====================================================================
+  const CLAUDE_API_KEY = 'sk-ant-api03-YOUR-KEY-HERE';
+
+  const AI_SYSTEM_PROMPT = `คุณเป็นผู้ช่วยด้านเวชศาสตร์ความดันบรรยากาศสูง (Hyperbaric Oxygen Therapy - HBO) สำหรับบุคลากรทางการแพทย์ที่ใช้งานระบบตรวจมาตรฐาน
+- ตอบคำถามเป็นภาษาไทย กระชับ ชัดเจน
+- ใช้ web search ค้นหาข้อมูลปัจจุบันจากแหล่งที่น่าเชื่อถือ เช่น UHMS, ECHM, NOAA, หรือวารสารทางการแพทย์
+- อ้างอิงแหล่งที่มาทุกครั้งที่ใช้ข้อมูลจาก web
+- หากไม่แน่ใจ ให้บอกตรง ๆ อย่าแต่งคำตอบขึ้นมาเอง`;
+
+  let aiHistory = [];
+  let aiIsLoading = false;
+
+  function openAiPanel() {
+    document.getElementById('ai-panel').classList.add('open');
+    document.getElementById('ai-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('ai-input').focus(), 200);
+  }
+  function closeAiPanel() {
+    document.getElementById('ai-panel').classList.remove('open');
+    document.getElementById('ai-overlay').classList.remove('open');
+  }
+
+  function clearAiChat() {
+    if (aiHistory.length === 0) return;
+    if (!confirm('ล้างประวัติการสนทนาทั้งหมด?')) return;
+    aiHistory = [];
+    document.getElementById('ai-messages').innerHTML =
+      '<div class="ai-msg system">ล้างประวัติแล้ว — เริ่มถามใหม่ได้เลย</div>';
+  }
+
+  function handleAiKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendAiMessage();
+    }
+  }
+
+  function escapeHtmlAi(s) {
+    return String(s).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderAiContent(content) {
+    // content can be string or array of content blocks
+    if (typeof content === 'string') return escapeHtmlAi(content);
+    if (!Array.isArray(content)) return '';
+    return content
+      .filter(b => b.type === 'text')
+      .map(b => escapeHtmlAi(b.text))
+      .join('\n');
+  }
+
+  function appendMessage(role, text, isError) {
+    const wrap = document.getElementById('ai-messages');
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + (isError ? 'error' : role);
+    div.innerHTML = escapeHtmlAi(text).replace(/\n/g, '<br>');
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return div;
+  }
+
+  function showThinking(label) {
+    const wrap = document.getElementById('ai-messages');
+    const div = document.createElement('div');
+    div.className = 'ai-thinking';
+    div.id = 'ai-thinking-' + Date.now();
+    div.innerHTML = `<span>${escapeHtmlAi(label || 'กำลังคิด')}</span><span class="dots"><span></span><span></span><span></span></span>`;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return div;
+  }
+
+  async function sendAiMessage() {
+    if (aiIsLoading) return;
+    const input = document.getElementById('ai-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!CLAUDE_API_KEY || CLAUDE_API_KEY === 'sk-ant-api03-YOUR-KEY-HERE') {
+      appendMessage('bot', 'ยังไม่ได้ตั้งค่า API key — ผู้ดูแลระบบต้องแก้ตัวแปร CLAUDE_API_KEY ในไฟล์ inspector/index.html ก่อนใช้งาน', true);
+      return;
+    }
+
+    appendMessage('user', text);
+    input.value = '';
+    aiIsLoading = true;
+    document.getElementById('ai-send').disabled = true;
+    const thinkingEl = showThinking('กำลังค้นหาคำตอบ');
+
+    try {
+      aiHistory.push({ role: 'user', content: text });
+      const answer = await callClaudeWebSearch();
+      thinkingEl.remove();
+      if (answer) {
+        appendMessage('bot', answer);
+      } else {
+        appendMessage('bot', '(ไม่มีคำตอบ)', true);
+      }
+    } catch (err) {
+      thinkingEl.remove();
+      appendMessage('bot', 'เกิดข้อผิดพลาด: ' + err.message, true);
+      // rollback last user message from history
+      if (aiHistory.length && aiHistory[aiHistory.length - 1].role === 'user') {
+        aiHistory.pop();
+      }
+    } finally {
+      aiIsLoading = false;
+      document.getElementById('ai-send').disabled = false;
+      document.getElementById('ai-input').focus();
+    }
+  }
+
+  async function callClaudeWebSearch() {
+    let workingMsgs = aiHistory.map(m => ({ role: m.role, content: m.content }));
+    const MAX_ITER = 6;
+
+    for (let i = 0; i < MAX_ITER; i++) {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2048,
+          system: AI_SYSTEM_PROMPT,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+          messages: workingMsgs
+        })
+      });
+
+      if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const errData = await resp.json();
+          msg = errData.error?.message || msg;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+
+      const data = await resp.json();
+
+      // If model finished, extract text and return
+      if (data.stop_reason !== 'tool_use') {
+        const textParts = (data.content || [])
+          .filter(b => b.type === 'text')
+          .map(b => b.text);
+        const answer = textParts.join('\n\n').trim();
+        // Save full assistant content to history for context continuity
+        aiHistory.push({ role: 'assistant', content: data.content });
+        return answer || '(AI ไม่ได้ส่งคำตอบที่เป็นข้อความ)';
+      }
+
+      // tool_use — append assistant content + tool_results, then loop
+      workingMsgs.push({ role: 'assistant', content: data.content });
+      const toolResults = (data.content || [])
+        .filter(b => b.type === 'tool_use')
+        .map(b => ({
+          type: 'tool_result',
+          tool_use_id: b.id,
+          content: ''
+        }));
+      if (toolResults.length === 0) break;
+      workingMsgs.push({ role: 'user', content: toolResults });
+    }
+
+    throw new Error('AI ค้นหาเกินจำนวนรอบที่กำหนด ลองถามใหม่');
+  }
+
+  // Auto-resize textarea
+  document.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('ai-input');
+    if (ta) {
+      ta.addEventListener('input', () => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+      });
+    }
   });
 </script>
 </body>
