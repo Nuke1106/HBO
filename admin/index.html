@@ -251,6 +251,7 @@ function render() {
   });
   const allInspectors = new Set();
   allRows.forEach(r => allInspectors.add(r.inspector_name));
+  const gradeAvg = totalScored ? (totalSum / totalScored).toFixed(2) : '0.00';
 
   let html = `
   <div class="card overall-card">
@@ -259,6 +260,7 @@ function render() {
       <div class="stat"><b>${totalSum.toFixed(2)}</b><small>คะแนนรวม (จากค่าเฉลี่ย)</small></div>
       <div class="stat"><b>${totalMax}</b><small>คะแนนเต็ม</small></div>
       <div class="stat"><b>${totalMax ? (totalSum/totalMax*100).toFixed(2) : '0.00'}%</b><small>เปอร์เซ็นต์</small></div>
+      <div class="stat"><b>${gradeAvg} / 4</b><small>เกรดเฉลี่ยรวม</small></div>
       <div class="stat"><b>${totalScored}</b><small>ข้อที่ตรวจแล้ว</small></div>
       <div class="stat"><b style="color:#ffd166">${totalCritFail}</b><small>ข้อบังคับ (*) ที่ยังไม่ผ่าน</small></div>
       <div class="stat"><b>${allInspectors.size}</b><small>ผู้ตรวจทั้งหมด</small></div>
