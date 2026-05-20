@@ -631,6 +631,7 @@
     <button class="btn btn-secondary" id="btn-print">🖨 พิมพ์ / PDF</button>
     <button class="btn btn-secondary" id="btn-edit-info">✎ แก้ไขข้อมูลผู้ตรวจ</button>
     <button class="btn btn-secondary" id="btn-sync" title="ส่งข้อมูลขึ้น Google Sheets">☁ Sync</button>
+    <button class="btn btn-secondary" id="btn-load-server" title="โหลดข้อมูลที่ sync ไว้กลับมาแก้ไข">⤓ โหลดจาก Server</button>
     <button class="btn btn-danger" id="btn-reset">🗑 ล้างข้อมูล</button>
     <span class="sync-indicator" id="sync-indicator">●</span>
   </div>
@@ -1108,6 +1109,85 @@ function loadFromStorage() {
   try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 
+async function loadFromServer() {
+  if (!API_URL) { showToast('ยังไม่ได้ตั้งค่า API_URL — โหมด Offline', 'warn', 3000); return; }
+  const info = getInfo();
+  if (!info.group || !info.inspector || !info.unit || !info.date) {
+    showToast('ต้องกรอกข้อมูลผู้ตรวจ (กลุ่ม/ชื่อ/หน่วย/วันที่) ให้ครบก่อนโหลด', 'warn', 3500);
+    return;
+  }
+  if (!confirm(
+    'โหลดข้อมูลที่บันทึกไว้กลับมาแก้ไข:\n\n' +
+    'กลุ่ม: ' + info.group + '\n' +
+    'ผู้ตรวจ: ' + info.inspector + '\n' +
+    'หน่วย: ' + info.unit + '\n' +
+    'วันที่: ' + info.date + '\n\n' +
+    '⚠ คะแนน/หมายเหตุ/รูป ของข้อในกลุ่มนี้ที่ตรงกันจะถูกแทนที่ด้วยข้อมูลจาก Server'
+  )) return;
+
+  setSyncStatus('syncing');
+  try {
+    const url = API_URL + '?action=list&unit=' + encodeURIComponent(info.unit) + '&date=' + encodeURIComponent(info.date);
+    const res = await fetch(url);
+    const j = await res.json();
+    if (!j.ok) { setSyncStatus('error'); showToast('โหลดไม่สำเร็จ: ' + (j.error || 'unknown'), 'error', 3000); return; }
+
+    const rows = (j.rows || []).filter(r => r.inspector_name === info.inspector && r.group === info.group);
+    if (rows.length === 0) {
+      setSyncStatus('online');
+      showToast('ไม่พบข้อมูลที่บันทึกไว้สำหรับเงื่อนไขนี้', 'warn', 3000);
+      return;
+    }
+
+    const itemsByCode = {};
+    document.querySelectorAll('.item').forEach(it => { itemsByCode[it.dataset.code] = it; });
+
+    let applied = 0;
+    rows.forEach(r => {
+      const it = itemsByCode[r.item_code];
+      if (!it) return;
+      // reset state ของข้อนี้ก่อน
+      it.dataset.score = ''; it.dataset.skipped = ''; it.dataset.note = '';
+      it.classList.remove('scored', 'skipped');
+      it.querySelectorAll('.score-btn').forEach(x => x.classList.remove('active'));
+      const sb = it.querySelector('.skip-btn'); if (sb) sb.classList.remove('active');
+
+      if (r.skipped) {
+        it.dataset.skipped = '1'; it.classList.add('skipped');
+        if (sb) sb.classList.add('active');
+      } else if (r.score !== null && r.score !== undefined) {
+        it.dataset.score = String(r.score);
+        it.classList.add('scored');
+        const btn = it.querySelector(`.score-btn[data-score="${r.score}"]`);
+        if (btn) btn.classList.add('active');
+      }
+      if (r.note) {
+        it.dataset.note = r.note;
+        const ta = it.querySelector('.note-input'); if (ta) ta.value = r.note;
+      }
+      if (r.photo_urls && r.photo_urls.length) {
+        const photos = r.photo_urls.map((u, idx) => ({
+          localId: 'srv-' + Date.now() + '-' + idx, url: u, uploaded: true
+        }));
+        it.dataset.photos = JSON.stringify(photos);
+        renderThumbs(it);
+      }
+      applied++;
+    });
+
+    rows.forEach(r => { if (r.section_submitted) submittedSections.add(r.section_code); });
+    submittedSections.forEach(secCode => markSectionAsSubmittedUI(secCode));
+
+    saveToStorage(false);
+    updateSummary();
+    setSyncStatus('online');
+    showToast(`โหลดข้อมูลจาก Server สำเร็จ ${applied} ข้อ`, 'success', 3000);
+  } catch (e) {
+    setSyncStatus('error');
+    showToast('เชื่อมต่อ server ไม่ได้', 'error', 3000);
+  }
+}
+
 async function syncToServer(showResult=false) {
   if (!API_URL) {
     if (showResult) showToast('ยังไม่ได้ตั้งค่า API_URL — โหมด Offline', 'warn');
@@ -1372,6 +1452,7 @@ function setupHandlers() {
     });
     syncToServer(true);
   });
+  $('btn-load-server').addEventListener('click', loadFromServer);
   $('btn-edit-info').addEventListener('click', () => $('preStartOverlay').classList.remove('hidden'));
   $('btn-reset').addEventListener('click', () => {
     if (confirm('ต้องการล้างข้อมูลในเครื่องทั้งหมดใช่หรือไม่? (ข้อมูลที่ sync ขึ้น Google Sheet จะยังอยู่)')) {
