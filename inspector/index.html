@@ -1291,6 +1291,7 @@ async function submitSectionToServer(sectionCode, secId) {
     if (j.ok) {
       submittedSections.add(sectionCode);
       markSectionAsSubmittedUI(sectionCode);
+      if (btn) btn.disabled = false;
       saveToStorage(false);
       setSyncStatus('online');
       showToast(`ส่งหัวข้อ ${sectionCode} เรียบร้อย (${j.count} ข้อ)`, 'success', 3000);
