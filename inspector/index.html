@@ -893,7 +893,7 @@ async function uploadPhotoToServer(itemEl, photoObj) {
     const base64 = photoObj.dataUrl.split(',')[1];
     const filename = (itemEl.dataset.code || 'photo').replace(/[^\w.-]/g,'_') + '_' + photoObj.localId + '.jpg';
     const res = await fetch(API_URL, {
-      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      method: 'POST',
       body: JSON.stringify({ action: 'upload_photo', filename, data_base64: base64, mime: 'image/jpeg' })
     });
     const j = await res.json();
@@ -1084,7 +1084,7 @@ async function syncToServer(showResult=false) {
   if (rows.length === 0) { setSyncStatus('online'); if (showResult) showToast('ไม่มีข้อมูลใหม่ที่ต้อง sync', 'warn'); return; }
   try {
     const res = await fetch(API_URL, {
-      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      method: 'POST',
       body: JSON.stringify({ action: 'bulk_submit', rows })
     });
     const j = await res.json();
@@ -1152,7 +1152,7 @@ async function submitSectionToServer(sectionCode, secId) {
   try {
     setSyncStatus('syncing');
     const res = await fetch(API_URL, {
-      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      method: 'POST',
       body: JSON.stringify({ action: 'submit_section', section_code: sectionCode, rows: rows })
     });
     const j = await res.json();
