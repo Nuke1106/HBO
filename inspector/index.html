@@ -601,7 +601,15 @@
     </div>
     <div class="field">
       <label>หน่วยงานที่ตรวจ <span class="req">*</span></label>
-      <input type="text" id="ps-unit" placeholder="เช่น โรงพยาบาล...../หน่วยงาน....">
+      <select id="ps-unit-sel" onchange="onUnitChange()">
+        <option value="">-- เลือกหน่วยงาน --</option>
+        <option value="รพ.สมเด็จพระนางเจ้าสิริกิติ์ พร.">รพ.สมเด็จพระนางเจ้าสิริกิติ์ พร.</option>
+        <option value="รพ.อาภากร ฐท.สส.">รพ.อาภากร ฐท.สส.</option>
+        <option value="รพ.ฐท.สข.ทรภ.2">รพ.ฐท.สข.ทรภ.2</option>
+        <option value="รพ.ฐท.พง.ทรภ.3">รพ.ฐท.พง.ทรภ.3</option>
+        <option value="__other__">ระบุเอง...</option>
+      </select>
+      <input type="text" id="ps-unit-text" placeholder="พิมพ์ชื่อหน่วยงาน" style="display:none;margin-top:6px;">
       <div class="error-text" id="err-unit">กรุณาระบุหน่วยงานที่ตรวจ</div>
     </div>
     <div class="actions">
@@ -934,11 +942,37 @@ async function uploadPhotoToServer(itemEl, photoObj) {
 }
 
 // =================== STATE ===================
+const UNIT_LIST = [
+  'รพ.สมเด็จพระนางเจ้าสิริกิติ์ พร.',
+  'รพ.อาภากร ฐท.สส.',
+  'รพ.ฐท.สข.ทรภ.2',
+  'รพ.ฐท.พง.ทรภ.3'
+];
+function onUnitChange() {
+  const sel = $('ps-unit-sel'), txt = $('ps-unit-text');
+  const isOther = sel.value === '__other__';
+  txt.style.display = isOther ? '' : 'none';
+  if (!isOther) txt.value = '';
+}
+function getUnitValue() {
+  const sel = $('ps-unit-sel');
+  return sel.value === '__other__' ? $('ps-unit-text').value.trim() : sel.value;
+}
+function setUnitValue(val) {
+  const sel = $('ps-unit-sel'), txt = $('ps-unit-text');
+  if (!val) { sel.value = ''; txt.style.display = 'none'; txt.value = ''; return; }
+  if (UNIT_LIST.includes(val)) {
+    sel.value = val; txt.style.display = 'none'; txt.value = '';
+  } else {
+    sel.value = '__other__'; txt.style.display = ''; txt.value = val;
+  }
+}
+
 function getInfo() {
   return { group: currentGroup,
     inspector: $('ps-inspector').value.trim(),
     date: $('ps-date').value,
-    unit: $('ps-unit').value.trim() };
+    unit: getUnitValue() };
 }
 
 function collectState() {
@@ -967,7 +1001,7 @@ function loadState(state) {
     if (state.info.group) currentGroup = state.info.group;
     $('ps-inspector').value = state.info.inspector || '';
     $('ps-date').value = state.info.date || '';
-    $('ps-unit').value = state.info.unit || '';
+    setUnitValue(state.info.unit || '');
   }
   buildForm();
   if (state.items) {
@@ -1263,7 +1297,7 @@ function setupPreStart() {
   if (existing && existing.info) {
     $('ps-inspector').value = existing.info.inspector || '';
     $('ps-date').value = existing.info.date || '';
-    $('ps-unit').value = existing.info.unit || '';
+    setUnitValue(existing.info.unit || '');
     if (existing.info.group) {
       const opt = document.querySelector(`.group-option[data-group="${existing.info.group}"]`);
       if (opt) opt.classList.add('selected');
@@ -1278,11 +1312,11 @@ function setupPreStart() {
     const grp = sel ? sel.dataset.group : '';
     const ins = $('ps-inspector').value.trim();
     const dt = $('ps-date').value;
-    const un = $('ps-unit').value.trim();
+    const un = getUnitValue();
     $('err-group').classList.toggle('show', !grp);
     $('err-inspector').classList.toggle('show', !ins); $('ps-inspector').classList.toggle('invalid', !ins);
     $('err-date').classList.toggle('show', !dt); $('ps-date').classList.toggle('invalid', !dt);
-    $('err-unit').classList.toggle('show', !un); $('ps-unit').classList.toggle('invalid', !un);
+    $('err-unit').classList.toggle('show', !un); $('ps-unit-sel').classList.toggle('invalid', !un);
     if (!grp || !ins || !dt || !un) return;
 
     currentGroup = grp;
@@ -1301,7 +1335,7 @@ function setupPreStart() {
     if (sel) state.info.group = sel.dataset.group;
     state.info.inspector = $('ps-inspector').value.trim() || state.info.inspector;
     state.info.date = $('ps-date').value || state.info.date;
-    state.info.unit = $('ps-unit').value.trim() || state.info.unit;
+    state.info.unit = getUnitValue() || state.info.unit;
     if (!state.info.group) { showToast('กรุณาเลือกกลุ่ม', 'warn'); return; }
     loadState(state);
     overlay.classList.add('hidden');

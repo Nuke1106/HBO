@@ -141,7 +141,15 @@
     <div class="filters">
       <div>
         <label>หน่วยงาน</label>
-        <input type="text" id="f-unit" placeholder="พิมพ์ชื่อหน่วยงาน (เว้นว่าง = ทั้งหมด)">
+        <select id="f-unit-sel" onchange="onAdminUnitChange()">
+          <option value="">ทั้งหมด</option>
+          <option value="รพ.สมเด็จพระนางเจ้าสิริกิติ์ พร.">รพ.สมเด็จพระนางเจ้าสิริกิติ์ พร.</option>
+          <option value="รพ.อาภากร ฐท.สส.">รพ.อาภากร ฐท.สส.</option>
+          <option value="รพ.ฐท.สข.ทรภ.2">รพ.ฐท.สข.ทรภ.2</option>
+          <option value="รพ.ฐท.พง.ทรภ.3">รพ.ฐท.พง.ทรภ.3</option>
+          <option value="__other__">ระบุเอง...</option>
+        </select>
+        <input type="text" id="f-unit" placeholder="พิมพ์ชื่อหน่วยงาน" style="display:none;margin-top:6px;">
       </div>
       <div>
         <label>วันที่ตรวจ</label>
@@ -170,6 +178,17 @@ const DATA = [{"category":"อำนวยการ","title":"หมวดอำ
 const $ = (id) => document.getElementById(id);
 let allRows = [];
 
+function onAdminUnitChange() {
+  const sel = $('f-unit-sel'), txt = $('f-unit');
+  const isOther = sel.value === '__other__';
+  txt.style.display = isOther ? '' : 'none';
+  if (!isOther) txt.value = '';
+}
+function getAdminUnit() {
+  const sel = $('f-unit-sel');
+  return sel.value === '__other__' ? $('f-unit').value.trim() : sel.value;
+}
+
 function toggleNotPassed(id, btn) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -183,7 +202,7 @@ function escapeHtml(s) {
 
 async function loadData() {
   if (!API_URL) { alert('ยังไม่ได้ตั้งค่า API_URL ในไฟล์ Dashboard'); return; }
-  const unit = $('f-unit').value.trim();
+  const unit = getAdminUnit();
   const date = $('f-date').value;
   $('summary-area').innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>';
   try {
@@ -467,7 +486,7 @@ function exportXLSX() {
   // Sheet 1: Summary
   const sumRows = [
     ['สรุปผลการตรวจมาตรฐานหน่วยงาน HBO'],
-    ['หน่วยงาน', $('f-unit').value || 'ทั้งหมด'],
+    ['หน่วยงาน', getAdminUnit() || 'ทั้งหมด'],
     ['วันที่', $('f-date').value || 'ทั้งหมด'],
     ['สร้างเมื่อ', new Date().toLocaleString('th-TH')],
     [],
@@ -536,7 +555,7 @@ function exportXLSX() {
   XLSX.utils.book_append_sheet(wb, ws4, 'ข้อมูลดิบ');
 
   const date = $('f-date').value || new Date().toISOString().slice(0,10);
-  const unit = ($('f-unit').value || 'all').replace(/[^\w\u0E00-\u0E7F-]/g, '_');
+  const unit = (getAdminUnit() || 'all').replace(/[^\w\u0E00-\u0E7F-]/g, '_');
   XLSX.writeFile(wb, `HBO_Summary_${unit}_${date}.xlsx`);
 }
 
