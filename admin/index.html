@@ -339,30 +339,11 @@ function render() {
     idx++;
     const c = cats[catName];
     const insp = Array.from(c.inspectors);
-    const npId = 'np-' + catName;
-    const notPassedHtml = c.notPassedItems.length > 0
-      ? `<div class="not-passed-list" id="${npId}">
-          <div class="not-passed-title">
-            <span>⚠ ข้อที่ไม่ผ่าน (คะแนน 2–2.99) — ${c.notPassedItems.length} ข้อ</span>
-            <button class="np-toggle-btn" onclick="toggleNotPassed('${npId}', this)">▼ ดูเนื้อหา</button>
-          </div>
-          <div class="not-passed-items">
-            ${c.notPassedItems.map(i =>
-              `<div class="not-passed-item">
-                <span class="not-passed-code">${escapeHtml(i.code)}</span>
-                <span class="not-passed-detail">${escapeHtml(i.detail)}</span>
-                <span class="not-passed-score">${i.avg.toFixed(2)}</span>
-              </div>`
-            ).join('')}
-          </div>
-        </div>`
-      : '';
     html += `<div class="card cat-card cat-${idx}">
       <h3>${catName}</h3>
       <div class="big">${c.sumAvg.toFixed(2)} / ${c.maxScore}</div>
       <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; เกรดเฉลี่ย ${c.gradeAvg.toFixed(2)}/4 &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อบังคับ ${c.criticalFail}</div>
       <div class="inspectors">ผู้ตรวจ (${insp.length}): ${escapeHtml(insp.join(', ')) || '-'}</div>
-      ${notPassedHtml}
     </div>`;
   });
   html += '</div>';
