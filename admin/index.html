@@ -126,9 +126,29 @@
     table th, table td { padding: 6px 8px; }
     .missing-codes { max-width: 200px; }
   }
+  #print-notpassed-page { display: none; }
+  .np-print-cat { margin-bottom: 18px; }
+  .np-print-cat-title { font-size: 14px; font-weight: 700; background: #0a6cb1; color: #fff;
+    padding: 6px 12px; border-radius: 4px; margin-bottom: 8px; }
+  .np-print-empty { font-size: 12px; color: #888; padding: 4px 12px; font-style: italic; }
+  .np-print-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .np-print-table th { background: #e8f0fe; padding: 6px 8px; border: 1px solid #c0c0c0;
+    text-align: left; font-weight: 700; }
+  .np-print-table td { padding: 5px 8px; border: 1px solid #d0d0d0; vertical-align: top; line-height: 1.4; }
+  .np-print-table tr:nth-child(even) td { background: #fafafa; }
+  .np-code-tag { background: #fff3cd; color: #7c4a00; border: 1px solid #fcd96a;
+    border-radius: 3px; padding: 1px 6px; font-weight: 700; white-space: nowrap; }
   @media print {
     header, .filters, .toolbar, .tabs { display: none !important; }
     .tab-pane { display: block !important; }
+    #print-notpassed-page {
+      display: block !important;
+      page-break-before: always;
+      padding: 14mm 16mm;
+      font-family: inherit;
+    }
+    .not-passed-items { max-height: none !important; overflow: visible !important; }
+    .not-passed-detail, .not-passed-score { display: inline !important; }
   }
 </style>
 </head>
@@ -567,9 +587,50 @@ function exportXLSX() {
 
 $('btn-load').addEventListener('click', loadData);
 $('btn-export').addEventListener('click', exportXLSX);
-$('btn-print').addEventListener('click', () => window.print());
 
 $('f-date').valueAsDate = new Date();
+
+function buildNotPassedPrintPage() {
+  if (!allRows.length) { $('print-notpassed-page').innerHTML = ''; return; }
+  const agg = aggregateByItem();
+  const cats = categoryStats(agg);
+  const unit = getAdminUnit() || '-';
+  const date = $('f-date').value || '-';
+
+  let html = `
+    <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:18px;">
+      <div style="font-size:15px;font-weight:700;">รายการข้อที่ไม่ผ่าน (คะแนน 2 – 2.99)</div>
+      <div style="font-size:12px;color:#555;margin-top:4px;">หน่วยงาน: ${escapeHtml(unit)} &nbsp;|&nbsp; วันที่ตรวจ: ${escapeHtml(date)}</div>
+    </div>`;
+
+  ['อำนวยการ','ความปลอดภัย','การพยาบาล'].forEach(catName => {
+    const c = cats[catName];
+    html += `<div class="np-print-cat">
+      <div class="np-print-cat-title">ด้าน${escapeHtml(catName)}</div>`;
+    if (!c.notPassedItems.length) {
+      html += `<div class="np-print-empty">— ไม่มีข้อที่ไม่ผ่าน —</div>`;
+    } else {
+      html += `<table class="np-print-table">
+        <thead><tr>
+          <th style="width:110px">รหัสข้อ</th>
+          <th>รายละเอียด</th>
+          <th style="width:70px;text-align:center">คะแนนเฉลี่ย</th>
+        </tr></thead><tbody>
+        ${c.notPassedItems.map(i => `<tr>
+          <td><span class="np-code-tag">${escapeHtml(i.code)}</span></td>
+          <td>${escapeHtml(i.detail)}</td>
+          <td style="text-align:center;color:#b45309;font-weight:700">${i.avg.toFixed(2)}</td>
+        </tr>`).join('')}
+        </tbody></table>`;
+    }
+    html += `</div>`;
+  });
+
+  $('print-notpassed-page').innerHTML = html;
+}
+
+$('btn-print').addEventListener('click', () => { buildNotPassedPrintPage(); window.print(); });
 </script>
+<div id="print-notpassed-page"></div>
 </body>
 </html>
