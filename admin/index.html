@@ -50,14 +50,18 @@
     border: 1px solid #f0b429; border-radius: 4px; background: #fffbeb; color: #92400e;
     cursor: pointer; white-space: nowrap; transition: background .15s; flex-shrink: 0; }
   .np-toggle-btn:hover { background: #fef3c7; }
-  .not-passed-item { display: flex; align-items: baseline; gap: 6px; padding: 3px 0;
-    border-bottom: 1px dashed #f0e6d3; font-size: 12px; }
-  .not-passed-item:last-child { border-bottom: none; }
+  .not-passed-items { max-height: 180px; overflow-y: auto; padding-right: 4px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 6px; }
+  .not-passed-item { display: flex; align-items: baseline; gap: 6px; padding: 3px 0; font-size: 12px; }
   .not-passed-code { background: #fff3cd; color: #7c4a00; border: 1px solid #fcd96a;
     padding: 1px 7px; border-radius: 4px; font-family: "Consolas",monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .not-passed-detail { color: var(--text); flex: 1; line-height: 1.4; display: none; }
+  .not-passed-score { color: var(--warn); font-weight: 700; white-space: nowrap; font-size: 11px; display: none; }
+  .not-passed-list.expanded .not-passed-items { display: block; }
+  .not-passed-list.expanded .not-passed-item { border-bottom: 1px dashed #f0e6d3; }
+  .not-passed-list.expanded .not-passed-item:last-child { border-bottom: none; }
   .not-passed-list.expanded .not-passed-detail { display: inline; }
-  .not-passed-score { color: var(--warn); font-weight: 700; white-space: nowrap; font-size: 11px; }
+  .not-passed-list.expanded .not-passed-score { display: inline; }
 
   .overall-card { background: linear-gradient(135deg, #0a6cb1, #084d80); color: white; padding: 22px; border-radius: 10px; }
   .overall-card h2 { margin: 0 0 8px; font-size: 18px; }
@@ -322,13 +326,15 @@ function render() {
             <span>⚠ ข้อที่ไม่ผ่าน (คะแนน 2–2.99) — ${c.notPassedItems.length} ข้อ</span>
             <button class="np-toggle-btn" onclick="toggleNotPassed('${npId}', this)">▼ ดูเนื้อหา</button>
           </div>
-          ${c.notPassedItems.map(i =>
-            `<div class="not-passed-item">
-              <span class="not-passed-code">${escapeHtml(i.code)}</span>
-              <span class="not-passed-detail">${escapeHtml(i.detail)}</span>
-              <span class="not-passed-score">${i.avg.toFixed(2)}</span>
-            </div>`
-          ).join('')}
+          <div class="not-passed-items">
+            ${c.notPassedItems.map(i =>
+              `<div class="not-passed-item">
+                <span class="not-passed-code">${escapeHtml(i.code)}</span>
+                <span class="not-passed-detail">${escapeHtml(i.detail)}</span>
+                <span class="not-passed-score">${i.avg.toFixed(2)}</span>
+              </div>`
+            ).join('')}
+          </div>
         </div>`
       : '';
     html += `<div class="card cat-card cat-${idx}">
