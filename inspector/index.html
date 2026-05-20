@@ -242,7 +242,7 @@
     header.app-header, .floating-actions, .toolbar, .btn,
     .photo-buttons, .photo-thumb .x, .submit-section-btn,
     .criteria-panel, .criteria-overlay,
-    .ai-fab, .ai-overlay, .ai-panel { display: none !important; }
+    .ai-fab, .nblm-fab, .ai-overlay, .ai-panel { display: none !important; }
     .section-content.collapsed { display: block !important; }
     body { background: white; }
     .print-header {
@@ -391,6 +391,27 @@
   }
   .ai-fab:hover { transform: scale(1.08); }
   .ai-fab:active { transform: scale(.95); }
+  .nblm-fab {
+    position: fixed;
+    left: 20px;
+    bottom: 86px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(5,150,105,.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s;
+    text-decoration: none;
+  }
+  .nblm-fab:hover { transform: scale(1.08); }
+  .nblm-fab:active { transform: scale(.95); }
 
   .ai-overlay {
     display: none;
@@ -1547,6 +1568,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- AI Chat Assistant -->
+<a class="nblm-fab" href="https://notebooklm.google.com/notebook/71f743da-7a12-4248-bc45-aa7847b757be" target="_blank" rel="noopener" title="ค้นมาตรฐาน HBO (NotebookLM)">📖</a>
 <button class="ai-fab" id="ai-fab" onclick="openAiPanel()" title="ถาม AI">💬</button>
 <div class="ai-overlay" id="ai-overlay" onclick="closeAiPanel()"></div>
 <div class="ai-panel" id="ai-panel">
