@@ -44,13 +44,19 @@
   .cat-card .mini { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .cat-card .inspectors { font-size: 11px; color: var(--muted); margin-top: 8px; }
   .not-passed-list { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
-  .not-passed-title { font-size: 12px; font-weight: 700; color: var(--warn); margin-bottom: 6px; }
+  .not-passed-title { font-size: 12px; font-weight: 700; color: var(--warn); margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .np-toggle-btn { font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border: 1px solid #f0b429; border-radius: 4px; background: #fffbeb; color: #92400e;
+    cursor: pointer; white-space: nowrap; transition: background .15s; flex-shrink: 0; }
+  .np-toggle-btn:hover { background: #fef3c7; }
   .not-passed-item { display: flex; align-items: baseline; gap: 6px; padding: 3px 0;
     border-bottom: 1px dashed #f0e6d3; font-size: 12px; }
   .not-passed-item:last-child { border-bottom: none; }
   .not-passed-code { background: #fff3cd; color: #7c4a00; border: 1px solid #fcd96a;
     padding: 1px 7px; border-radius: 4px; font-family: "Consolas",monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
-  .not-passed-detail { color: var(--text); flex: 1; line-height: 1.4; }
+  .not-passed-detail { color: var(--text); flex: 1; line-height: 1.4; display: none; }
+  .not-passed-list.expanded .not-passed-detail { display: inline; }
   .not-passed-score { color: var(--warn); font-weight: 700; white-space: nowrap; font-size: 11px; }
 
   .overall-card { background: linear-gradient(135deg, #0a6cb1, #084d80); color: white; padding: 22px; border-radius: 10px; }
@@ -163,6 +169,13 @@ const DATA = [{"category":"อำนวยการ","title":"หมวดอำ
 
 const $ = (id) => document.getElementById(id);
 let allRows = [];
+
+function toggleNotPassed(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const expanded = el.classList.toggle('expanded');
+  btn.textContent = expanded ? '▲ ซ่อนเนื้อหา' : '▼ ดูเนื้อหา';
+}
 
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -283,9 +296,13 @@ function render() {
     idx++;
     const c = cats[catName];
     const insp = Array.from(c.inspectors);
+    const npId = 'np-' + catName;
     const notPassedHtml = c.notPassedItems.length > 0
-      ? `<div class="not-passed-list">
-          <div class="not-passed-title">⚠ ข้อที่ไม่ผ่าน (คะแนน 2–2.99) — ${c.notPassedItems.length} ข้อ</div>
+      ? `<div class="not-passed-list" id="${npId}">
+          <div class="not-passed-title">
+            <span>⚠ ข้อที่ไม่ผ่าน (คะแนน 2–2.99) — ${c.notPassedItems.length} ข้อ</span>
+            <button class="np-toggle-btn" onclick="toggleNotPassed('${npId}', this)">▼ ดูเนื้อหา</button>
+          </div>
           ${c.notPassedItems.map(i =>
             `<div class="not-passed-item">
               <span class="not-passed-code">${escapeHtml(i.code)}</span>
