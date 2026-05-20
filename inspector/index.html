@@ -236,12 +236,24 @@
     .score-btn, .skip-btn { min-height: 44px; }
     .btn { min-height: 40px; }
   }
+  .print-header { display: none; }
+
   @media print {
     header.app-header, .floating-actions, .toolbar, .btn,
     .photo-buttons, .photo-thumb .x, .submit-section-btn,
     .criteria-panel, .criteria-overlay { display: none !important; }
     .section-content.collapsed { display: block !important; }
     body { background: white; }
+    .print-header {
+      display: block !important;
+      text-align: center;
+      margin: 0 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #0a6cb1;
+    }
+    .print-header h1 { font-size: 16px; margin: 0 0 8px; line-height: 1.35; }
+    .print-header .print-meta { font-size: 13px; color: #1a2a3a; line-height: 1.6; }
+    .print-header .print-meta b { font-weight: 700; }
   }
 
   /* Scoring criteria panel */
@@ -614,6 +626,8 @@
     <span class="sync-indicator" id="sync-indicator">●</span>
   </div>
 </header>
+
+<div class="print-header" id="print-header"></div>
 
 <div class="container">
   <div class="summary-bar">
@@ -1298,7 +1312,18 @@ function setupHandlers() {
   $('fab-save').addEventListener('click', () => saveToStorage(true));
   $('btn-continue').addEventListener('click', jumpToLast);
   $('btn-export-xlsx').addEventListener('click', exportXLSX);
-  $('btn-print').addEventListener('click', () => window.print());
+  $('btn-print').addEventListener('click', () => {
+    const info = getInfo();
+    $('print-header').innerHTML =
+      '<h1>แบบตรวจมาตรฐานหน่วยงานด้านเวชศาสตร์ความดันบรรยากาศสูงทางคลินิก</h1>' +
+      '<div class="print-meta">' +
+        'หน่วยรับตรวจ: <b>' + escapeHtml(info.unit || '-') + '</b>' +
+        ' &nbsp;|&nbsp; ผู้ตรวจ: <b>' + escapeHtml(info.inspector || '-') + '</b>' +
+        ' &nbsp;|&nbsp; กลุ่ม: <b>' + escapeHtml(info.group || '-') + '</b>' +
+        ' &nbsp;|&nbsp; วันที่: <b>' + escapeHtml(info.date || '-') + '</b>' +
+      '</div>';
+    window.print();
+  });
   $('btn-sync').addEventListener('click', () => {
     document.querySelectorAll('.item').forEach(it => {
       const hasData = (it.dataset.score !== undefined && it.dataset.score !== '') ||
