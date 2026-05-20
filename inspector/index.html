@@ -638,6 +638,7 @@
     <div class="summary-item">คะแนนรวม <b id="total-score">0</b></div>
     <div class="summary-item">เต็ม <b id="max-score">0</b></div>
     <div class="summary-item">เปอร์เซ็นต์ <b id="percent">0%</b></div>
+    <div class="summary-item">เกรดเฉลี่ย <b id="grade-avg">0.00 / 4</b></div>
     <div class="summary-item">ข้อบังคับ (*) ที่ยังไม่ผ่าน <b id="critical-fail">0</b></div>
     <div style="flex-basis:100%;">
       <div class="progress-wrapper"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
@@ -1038,6 +1039,8 @@ function updateSummary() {
   $('max-score').textContent = ratedTotal * 4;
   const pct = ratedTotal ? Math.round(total / (ratedTotal * 4) * 100) : 0;
   $('percent').textContent = pct + '%';
+  const gradeAvg = scored ? (total / scored) : 0;
+  $('grade-avg').textContent = gradeAvg.toFixed(2) + ' / 4';
   $('progress-bar').style.width = (totalCount ? ((scored + skipped) / totalCount * 100) : 0) + '%';
   document.querySelectorAll('.section-content').forEach(sc => {
     const items = sc.querySelectorAll('.item');
