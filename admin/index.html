@@ -88,6 +88,16 @@
     font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
   .section-block-header .total-info { font-size: 12px; font-weight: 400; opacity: .9; }
   .section-block table { font-size: 13px; }
+  .skip-mismatch { padding: 10px 14px; background: #fff7ed; border-top: 1px solid #fed7aa; }
+  .skip-mismatch-title { font-size: 12px; font-weight: 700; color: #c2410c; margin-bottom: 6px; }
+  .skip-mismatch-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0;
+    font-size: 12px; flex-wrap: wrap; border-bottom: 1px dashed #fed7aa; }
+  .skip-mismatch-row:last-child { border-bottom: none; }
+  .skip-mismatch-code { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74;
+    padding: 1px 7px; border-radius: 4px; font-family: "Consolas",monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .skip-mismatch-detail { color: var(--muted); flex: 1; line-height: 1.5; }
+  .skip-ok { padding: 8px 14px; background: #f0fdf4; border-top: 1px solid #bbf7d0;
+    font-size: 12px; color: #15803d; font-weight: 600; }
 
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
@@ -213,6 +223,7 @@ function categoryStats(aggregated) {
     c.sumAvg = items.reduce((s, i) => s + i.avg, 0);
     c.maxScore = items.length * 4;
     c.percent = c.maxScore ? (c.sumAvg / c.maxScore * 100) : 0;
+    c.gradeAvg = c.scoredItems ? (c.sumAvg / c.scoredItems) : 0;
     c.criticalFail = items.filter(i => i.critical && i.avg < 3).length;
     c.notPassedItems = items.filter(i => i.avg !== null && i.avg >= 2 && i.avg < 3);
   });
@@ -287,7 +298,7 @@ function render() {
     html += `<div class="card cat-card cat-${idx}">
       <h3>${catName}</h3>
       <div class="big">${c.sumAvg.toFixed(2)} / ${c.maxScore}</div>
-      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อบังคับ ${c.criticalFail}</div>
+      <div class="mini">${c.maxScore ? (c.sumAvg/c.maxScore*100).toFixed(2) : '0.00'}% &nbsp;•&nbsp; เกรดเฉลี่ย ${c.gradeAvg.toFixed(2)}/4 &nbsp;•&nbsp; ตรวจแล้ว ${c.scoredItems}/${c.totalItems} ข้อ &nbsp;•&nbsp; ไม่ผ่านข้อบังคับ ${c.criticalFail}</div>
       <div class="inspectors">ผู้ตรวจ (${insp.length}): ${escapeHtml(insp.join(', ')) || '-'}</div>
       ${notPassedHtml}
     </div>`;
@@ -400,7 +411,31 @@ function buildInspectorTables(catName, inspectorMap) {
       </tr>`;
     });
 
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
+
+    // ตรวจสอบความสอดคล้อง: ผู้ตรวจทุกคนต้องให้คะแนน/ข้าม ในข้อเดียวกัน
+    if (inspectorNames.length >= 2) {
+      const scoredBy = {}, skippedBy = {};
+      inspectorNames.forEach(name => {
+        const d = sectionInspectors[name];
+        d.scored.forEach(code => { (scoredBy[code] = scoredBy[code] || []).push(name); });
+        d.skipped.forEach(code => { (skippedBy[code] = skippedBy[code] || []).push(name); });
+      });
+      const mismatches = sec.items.filter(it => scoredBy[it.code] && skippedBy[it.code]);
+      if (mismatches.length > 0) {
+        html += `<div class="skip-mismatch">
+          <div class="skip-mismatch-title">⚠ ข้อที่ผู้ตรวจตัดสินใจไม่ตรงกัน (บางคนให้คะแนน บางคนข้าม) — ${mismatches.length} ข้อ</div>
+          ${mismatches.map(it => `<div class="skip-mismatch-row">
+            <span class="skip-mismatch-code">${escapeHtml(it.code)}</span>
+            <span class="skip-mismatch-detail">ให้คะแนน: ${escapeHtml(scoredBy[it.code].join(', '))} &nbsp;|&nbsp; ข้าม: ${escapeHtml(skippedBy[it.code].join(', '))}</span>
+          </div>`).join('')}
+        </div>`;
+      } else {
+        html += '<div class="skip-ok">✓ ผู้ตรวจทุกคนให้คะแนน/ข้าม ตรงกันทุกข้อ</div>';
+      }
+    }
+
+    html += '</div>';
   });
   return html;
 }
