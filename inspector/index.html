@@ -548,6 +548,42 @@
     gap: 8px;
     flex-shrink: 0;
   }
+  .ai-source-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px 0;
+    background: white;
+    flex-shrink: 0;
+  }
+  .ai-source-btn {
+    flex: 1;
+    padding: 6px 4px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #475569;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .ai-source-btn.active {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border-color: #4f46e5;
+  }
+  .ai-source-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+  .ai-source-badge.gcs { background: #d1fae5; color: #047857; }
+  .ai-source-badge.internet { background: #dbeafe; color: #1d4ed8; }
   .ai-input {
     flex: 1;
     padding: 10px 14px;
@@ -1574,7 +1610,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="ai-panel" id="ai-panel">
   <div class="ai-header">
     <div>
-      <h2>🔍 ผู้ช่วย AI (ค้นจากอินเทอร์เน็ต)</h2>
+      <h2>🔍 ผู้ช่วย AI</h2>
       <div class="sub">ถามข้อมูลเกี่ยวกับเวชศาสตร์ความดันบรรยากาศสูง</div>
     </div>
     <div style="display:flex;align-items:center;">
@@ -1583,7 +1619,12 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
   <div class="ai-messages" id="ai-messages">
-    <div class="ai-msg system">สอบถามข้อมูลเกี่ยวกับมาตรฐานห้องปรับแรงดันบรรยากาศสูง และอื่นๆที่เกี่ยวข้อง</div>
+    <div class="ai-msg system">สอบถามข้อมูลเกี่ยวกับมาตรฐานห้องปรับแรงดันบรรยากาศสูง และอื่นๆที่เกี่ยวข้อง — เลือกแหล่งค้นหาด้านล่าง (มาตรฐาน / อินเทอร์เน็ต / อัตโนมัติ)</div>
+  </div>
+  <div class="ai-source-bar">
+    <button class="ai-source-btn active" id="src-auto" onclick="setAiSource('auto')" title="ลองค้นจากมาตรฐานก่อน ถ้าไม่พบจึงค้นอินเทอร์เน็ต">⚡ อัตโนมัติ</button>
+    <button class="ai-source-btn" id="src-gcs" onclick="setAiSource('gcs')" title="ค้นจากฐานข้อมูลมาตรฐานเท่านั้น">📚 มาตรฐาน</button>
+    <button class="ai-source-btn" id="src-internet" onclick="setAiSource('internet')" title="ค้นจากอินเทอร์เน็ตเท่านั้น">🌐 อินเทอร์เน็ต</button>
   </div>
   <div class="ai-input-row">
     <textarea class="ai-input" id="ai-input" rows="1" placeholder="พิมพ์คำถาม..." onkeydown="handleAiKey(event)"></textarea>
@@ -1598,6 +1639,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let aiHistory = [];
   let aiIsLoading = false;
+  let aiSource = 'auto';
+
+  function setAiSource(src) {
+    aiSource = src;
+    ['auto','gcs','internet'].forEach(s => {
+      const btn = document.getElementById('src-' + s);
+      if (btn) btn.classList.toggle('active', s === src);
+    });
+  }
 
   function openAiPanel() {
     document.getElementById('ai-panel').classList.add('open');
@@ -1679,10 +1729,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       aiHistory.push({ role: 'user', content: text });
-      const answer = await callClaudeWebSearch();
+      const result = await callClaudeWebSearch();
       thinkingEl.remove();
-      if (answer) {
-        appendMessage('bot', answer);
+      if (result.answer) {
+        appendBotMessage(result.answer, result.source_used);
       } else {
         appendMessage('bot', '(ไม่มีคำตอบ)', true);
       }
@@ -1701,12 +1751,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function callClaudeWebSearch() {
-    // ส่ง messages ทั้งหมดให้ GAS — GAS จะ proxy ไป Anthropic, ทำ tool_use loop, ส่งคำตอบกลับ
+    // ส่ง messages + source ให้ GAS — GAS เลือกค้นจาก RAG (GCS) หรือ web search
     const messages = aiHistory.map(m => ({ role: m.role, content: m.content }));
 
     const resp = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'ai_chat', messages: messages })
+      body: JSON.stringify({ action: 'ai_chat', messages: messages, source: aiSource })
     });
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -1715,9 +1765,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!data.ok) throw new Error(data.error || 'ไม่ทราบสาเหตุ');
 
     const answer = (data.answer || '').trim();
-    // เก็บ assistant turn ใน history (เป็น string พอ — ใช้สำหรับ context รอบถัดไป)
     aiHistory.push({ role: 'assistant', content: answer });
-    return answer || '(AI ไม่ได้ส่งคำตอบที่เป็นข้อความ)';
+    return {
+      answer: answer || '(AI ไม่ได้ส่งคำตอบที่เป็นข้อความ)',
+      source_used: data.source_used || ''
+    };
+  }
+
+  function appendBotMessage(text, sourceUsed) {
+    const wrap = document.getElementById('ai-messages');
+    const div = document.createElement('div');
+    div.className = 'ai-msg bot';
+    let badge = '';
+    if (sourceUsed === 'gcs') badge = '<span class="ai-source-badge gcs">📚 จากฐานข้อมูลมาตรฐาน HBO</span><br>';
+    else if (sourceUsed === 'internet') badge = '<span class="ai-source-badge internet">🌐 จากอินเทอร์เน็ต</span><br>';
+    div.innerHTML = badge + escapeHtmlAi(text).replace(/\n/g, '<br>');
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return div;
   }
 
   // Auto-resize textarea
