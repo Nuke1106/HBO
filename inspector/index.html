@@ -563,6 +563,31 @@
   }
   .ai-source-badge.gcs { background: #d1fae5; color: #047857; }
   .ai-source-badge.internet { background: #dbeafe; color: #1d4ed8; }
+  .ai-file-selector {
+    padding: 6px 12px 8px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .ai-file-selector.show { display: flex; }
+  .ai-file-selector-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; font-weight: 700; color: #475569; padding-bottom: 2px;
+  }
+  .ai-file-toggle-all {
+    font-size: 10px; color: #6366f1; cursor: pointer;
+    background: none; border: none; padding: 0; font-family: inherit;
+  }
+  .ai-file-item {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 11px; color: #334155; cursor: pointer; line-height: 1.3;
+  }
+  .ai-file-item input[type=checkbox] { margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+  .ai-file-loading { font-size: 11px; color: #94a3b8; padding: 4px 0; }
   .ai-input {
     flex: 1;
     padding: 10px 14px;
@@ -1604,6 +1629,13 @@ document.addEventListener('DOMContentLoaded', () => {
     <button class="ai-source-btn" id="src-gcs" onclick="setAiSource('gcs')" title="ค้นจากฐานข้อมูลมาตรฐานเท่านั้น">📚 มาตรฐาน</button>
     <button class="ai-source-btn" id="src-internet" onclick="setAiSource('internet')" title="ค้นจากอินเทอร์เน็ตเท่านั้น">🌐 อินเทอร์เน็ต</button>
   </div>
+  <div class="ai-file-selector" id="ai-file-selector">
+    <div class="ai-file-selector-header">
+      <span>📄 เลือกเอกสารที่ต้องการค้น</span>
+      <button class="ai-file-toggle-all" onclick="toggleAllFiles()">เลือกทั้งหมด</button>
+    </div>
+    <div id="ai-file-list"><span class="ai-file-loading">⏳ กำลังโหลดรายชื่อไฟล์...</span></div>
+  </div>
   <div class="ai-input-row">
     <textarea class="ai-input" id="ai-input" rows="1" placeholder="พิมพ์คำถาม..." onkeydown="handleAiKey(event)"></textarea>
     <button class="ai-send-btn" id="ai-send" onclick="sendAiMessage()" title="ส่ง">➤</button>
@@ -1615,9 +1647,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // API key เก็บที่ฝั่ง GAS (Script Properties) — ไม่ปรากฏใน frontend
   // วิธีติดตั้ง: ดูไฟล์ inspector/AI_CHAT_SETUP.md
 
-  let aiHistory = [];
-  let aiIsLoading = false;
-  let aiSource = 'auto';
+  let aiHistory      = [];
+  let aiIsLoading    = false;
+  let aiSource       = 'auto';
+  let aiFiles        = [];     // รายชื่อไฟล์จาก GAS
+  let aiFilesLoaded  = false;
 
   function setAiSource(src) {
     aiSource = src;
@@ -1625,11 +1659,53 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('src-' + s);
       if (btn) btn.classList.toggle('active', s === src);
     });
+    const sel = document.getElementById('ai-file-selector');
+    if (sel) sel.classList.toggle('show', src !== 'internet');
+  }
+
+  function toggleAllFiles() {
+    const checks = document.querySelectorAll('#ai-file-list input[type=checkbox]');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    checks.forEach(c => c.checked = !allChecked);
+    document.querySelector('.ai-file-toggle-all').textContent =
+      allChecked ? 'เลือกทั้งหมด' : 'ยกเลิกทั้งหมด';
+  }
+
+  function getSelectedFiles() {
+    return Array.from(document.querySelectorAll('#ai-file-list input[type=checkbox]:checked'))
+      .map(c => c.value);
+  }
+
+  async function loadAiFiles() {
+    if (aiFilesLoaded || !API_URL) return;
+    try {
+      const resp = await fetch(API_URL + '?action=list_files');
+      const data = await resp.json();
+      if (!data.ok || !data.files.length) {
+        document.getElementById('ai-file-list').innerHTML =
+          '<span class="ai-file-loading">ไม่พบไฟล์มาตรฐาน</span>';
+        return;
+      }
+      aiFiles = data.files;
+      aiFilesLoaded = true;
+      document.getElementById('ai-file-list').innerHTML = aiFiles.map(f => `
+        <label class="ai-file-item">
+          <input type="checkbox" value="${f.name}" checked>
+          <span>${f.display}</span>
+        </label>`).join('');
+    } catch(e) {
+      document.getElementById('ai-file-list').innerHTML =
+        '<span class="ai-file-loading">โหลดรายชื่อไฟล์ไม่สำเร็จ</span>';
+    }
   }
 
   function openAiPanel() {
     document.getElementById('ai-panel').classList.add('open');
     document.getElementById('ai-overlay').classList.add('open');
+    // แสดง file selector ตาม source ปัจจุบัน
+    const sel = document.getElementById('ai-file-selector');
+    if (sel) sel.classList.toggle('show', aiSource !== 'internet');
+    loadAiFiles();
     setTimeout(() => document.getElementById('ai-input').focus(), 200);
   }
   function closeAiPanel() {
@@ -1734,7 +1810,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resp = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'ai_chat', messages: messages, source: aiSource })
+      body: JSON.stringify({ action: 'ai_chat', messages: messages, source: aiSource, selected_files: getSelectedFiles() })
     });
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
