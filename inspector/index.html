@@ -1493,6 +1493,15 @@ function setupHandlers() {
   $('btn-continue').addEventListener('click', jumpToLast);
   $('btn-export-xlsx').addEventListener('click', exportXLSX);
   $('btn-print').addEventListener('click', () => {
+    const ua = navigator.userAgent || '';
+    const isInApp = /Line\/|FBAN|FBAV|Instagram|Twitter|MicroMessenger/i.test(ua);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+
+    if (isInApp) {
+      alert('ไม่สามารถพิมพ์จาก LINE/Facebook ได้\n\nกรุณาเปิดลิงก์ในเบราว์เซอร์ (Safari / Chrome) แล้วกดพิมพ์อีกครั้ง\n\nวิธีเปิด: กด ⋯ หรือ ⋮ → "เปิดในเบราว์เซอร์"');
+      return;
+    }
+
     const info = getInfo();
     $('print-header').innerHTML =
       '<h1>แบบตรวจมาตรฐานหน่วยงานด้านเวชศาสตร์ความดันบรรยากาศสูงทางคลินิก</h1>' +
@@ -1502,6 +1511,11 @@ function setupHandlers() {
         ' &nbsp;|&nbsp; กลุ่ม: <b>' + escapeHtml(info.group || '-') + '</b>' +
         ' &nbsp;|&nbsp; วันที่: <b>' + escapeHtml(info.date || '-') + '</b>' +
       '</div>';
+
+    if (isMobile && !isInApp) {
+      alert('💡 บันทึกเป็น PDF:\n• iPhone/iPad: กด "พิมพ์" → กดค้างที่ภาพตัวอย่าง → "บันทึกเป็น PDF"\n• Android: เลือก "Save as PDF" ในหน้าพิมพ์');
+    }
+
     window.print();
   });
   $('btn-sync').addEventListener('click', () => {
