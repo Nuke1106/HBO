@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>แบบตรวจมาตรฐานหน่วยงานเวชศาสตร์ความดันบรรยากาศสูง</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
     --primary: #0a6cb1; --primary-dark: #084d80; --accent: #ff8a00;
@@ -1406,6 +1405,14 @@ function jumpToLast() {
 
 // =================== EXCEL EXPORT ===================
 function exportXLSX() {
+  if (typeof XLSX === 'undefined') {
+    showToast('กำลังโหลด Excel library...', 'info', 2000);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = () => exportXLSX();
+    document.head.appendChild(s);
+    return;
+  }
   const info = getInfo();
   const wb = XLSX.utils.book_new();
   const header = [
