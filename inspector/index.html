@@ -923,11 +923,9 @@ function attachItemHandlers() {
   document.querySelectorAll('input[type=file]').forEach(inp => {
     inp.addEventListener('change', async (e) => {
       const itemEl = document.getElementById(inp.dataset.id);
-      for (const file of e.target.files) {
-        await addPhoto(itemEl, file);
-      }
+      await Promise.all(Array.from(e.target.files).map(file => addPhoto(itemEl, file)));
       inp.value = '';
-      saveToStorage(false); // บันทึก local เท่านั้น (sync รอ upload เสร็จ)
+      saveToStorage(false);
     });
   });
   document.querySelectorAll('.submit-section-btn').forEach(btn => {
@@ -1012,7 +1010,6 @@ async function uploadPhotoToServer(itemEl, photoObj) {
     if (j.ok && j.url) {
       photoObj.uploaded = true;
       photoObj.url = j.url;
-      photoObj.dataUrl = null; // คืน memory หลัง upload เสร็จ
       const photos = JSON.parse(itemEl.dataset.photos || '[]');
       const idx = photos.findIndex(p => p.localId === photoObj.localId);
       if (idx >= 0) { photos[idx] = photoObj; itemEl.dataset.photos = JSON.stringify(photos); }
@@ -1025,11 +1022,10 @@ async function uploadPhotoToServer(itemEl, photoObj) {
     console.warn('Upload photo failed', e);
     showToast('อัปโหลดรูปไม่สำเร็จ: ' + e.message, 'error', 3000);
   } finally {
+    pendingSyncItems.add(itemEl.id);
     pendingUploads = Math.max(0, pendingUploads - 1);
     if (pendingUploads === 0) {
-      // ภาพทุกใบ upload เสร็จแล้ว — sync ครั้งเดียว
-      pendingSyncItems.add(itemEl.id);
-      saveToStorage(false);
+      saveToStorage(false); // sync ครั้งเดียวหลังทุกภาพ upload เสร็จ
     }
   }
 }
