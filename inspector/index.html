@@ -766,6 +766,7 @@ let lastEditedItem = null;
 let saveDebounce = null;
 let pendingSyncItems = new Set();
 let submittedSections = new Set();
+let pendingUploads = 0;
 
 const $ = (id) => document.getElementById(id);
 
@@ -926,8 +927,7 @@ function attachItemHandlers() {
         await addPhoto(itemEl, file);
       }
       inp.value = '';
-      pendingSyncItems.add(itemEl.id);
-      autoSave();
+      saveToStorage(false); // บันทึก local เท่านั้น (sync รอ upload เสร็จ)
     });
   });
   document.querySelectorAll('.submit-section-btn').forEach(btn => {
@@ -964,7 +964,10 @@ async function addPhoto(itemEl, file) {
     photos.push(photoObj);
     itemEl.dataset.photos = JSON.stringify(photos);
     renderThumbs(itemEl);
-    if (API_URL) uploadPhotoToServer(itemEl, photoObj);
+    if (API_URL) {
+      pendingUploads++;
+      uploadPhotoToServer(itemEl, photoObj);
+    }
   } catch (e) {
     showToast('แนบรูปไม่สำเร็จ: ' + e.message, 'error');
   }
@@ -1007,15 +1010,13 @@ async function uploadPhotoToServer(itemEl, photoObj) {
     });
     const j = await res.json();
     if (j.ok && j.url) {
-      photoObj.uploaded = true; photoObj.url = j.url;
+      photoObj.uploaded = true;
+      photoObj.url = j.url;
+      photoObj.dataUrl = null; // คืน memory หลัง upload เสร็จ
       const photos = JSON.parse(itemEl.dataset.photos || '[]');
       const idx = photos.findIndex(p => p.localId === photoObj.localId);
       if (idx >= 0) { photos[idx] = photoObj; itemEl.dataset.photos = JSON.stringify(photos); }
       renderThumbs(itemEl);
-      // หลังอัปโหลดเสร็จ ต้อง resync ข้อนี้เพื่อให้ URL ขึ้น Sheet
-      pendingSyncItems.add(itemEl.id);
-      saveToStorage(false);
-      setTimeout(() => syncToServer(false), 500);
       showToast('อัปโหลดรูปสำเร็จ ✓', 'success', 1500);
     } else {
       showToast('อัปโหลดรูปไม่สำเร็จ: ' + (j.error || 'unknown'), 'error', 3000);
@@ -1023,6 +1024,13 @@ async function uploadPhotoToServer(itemEl, photoObj) {
   } catch (e) {
     console.warn('Upload photo failed', e);
     showToast('อัปโหลดรูปไม่สำเร็จ: ' + e.message, 'error', 3000);
+  } finally {
+    pendingUploads = Math.max(0, pendingUploads - 1);
+    if (pendingUploads === 0) {
+      // ภาพทุกใบ upload เสร็จแล้ว — sync ครั้งเดียว
+      pendingSyncItems.add(itemEl.id);
+      saveToStorage(false);
+    }
   }
 }
 
