@@ -936,9 +936,23 @@ function attachItemHandlers() {
 
 // =================== PHOTOS ===================
 async function fileToCompressedBase64(file, maxW=1280, quality=0.75) {
+  // createImageBitmap decodes JPEG นอก main thread → UI ไม่ค้าง
+  if (typeof createImageBitmap !== 'undefined') {
+    try {
+      const bitmap = await createImageBitmap(file);
+      let w = bitmap.width, h = bitmap.height;
+      if (w > maxW) { h = Math.round(h * (maxW / w)); w = maxW; }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+      bitmap.close();
+      return c.toDataURL('image/jpeg', quality);
+    } catch(e) { /* fallback */ }
+  }
+  // Fallback สำหรับ iOS Safari เก่า
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file); // เร็วกว่า FileReader 2-3x
+    const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
       let w = img.naturalWidth, h = img.naturalHeight;
